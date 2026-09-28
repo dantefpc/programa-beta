@@ -29,6 +29,12 @@
         </div>
     </div>
 
+    <!-- Iframe oculto para enviar datos a Google Sheets sin bloqueos de seguridad -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+    <form id="formRegistro" action="https://script.google.com/macros/s/AKfycbxJ-bsbi74840rkZtoYbYQdmx9DuN6OCNc2mzHUOR6fuQxjd7Ch8mxW0bxsllnByG_1/exec" method="POST" target="hidden_iframe" style="display:none;">
+        <input type="hidden" name="correo" id="formInputCorreo">
+    </form>
+
     <div class="max-w-4xl mx-auto">
         <!-- Encabezado con datos del autor -->
         <header class="mb-6 text-center bg-white p-4 rounded-xl shadow-md border border-slate-100">
@@ -106,9 +112,6 @@
     </div>
 
     <script>
-        // Tu URL de Google Apps Script ya integrada
-        const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbxJ-bsbi74840rkZtoYbYQdmx9DuN6OCNc2mzHUOR6fuQxjd7Ch8mxW0bxsllnByG_1/exec";
-
         function validarCorreoInstitucional() {
             const correo = document.getElementById('inputCorreoInstitucional').value.trim().toLowerCase();
             const errorElemento = document.getElementById('mensajeError');
@@ -122,15 +125,9 @@
             if (correo.endsWith("@neumann.global")) {
                 localStorage.setItem("correo_usuario_economia", correo);
                 
-                // Envía el correo discretamente a tu Google Sheets
-                if(URL_GOOGLE_SHEETS) {
-                    fetch(URL_GOOGLE_SHEETS, {
-                        method: "POST",
-                        mode: "no-cors",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ correo: correo })
-                    }).catch(err => console.log(err));
-                }
+                // Enviar discretamente mediante el formulario oculto a Google Sheets
+                document.getElementById('formInputCorreo').value = correo;
+                document.getElementById('formRegistro').submit();
 
                 permitirAcceso(correo);
             } else {

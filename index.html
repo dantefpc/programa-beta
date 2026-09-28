@@ -32,13 +32,12 @@
                         <table class="w-full text-left border-collapse" id="tablaDatos">
                             <thead>
                                 <tr class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200 sticky top-0">
-                                    <th class="p-2.5">Precio (Y / X)</th>
-                                    <th class="p-2.5">Cantidad (X / Y)</th>
+                                    <th class="p-2.5">Precio (Eje Y)</th>
+                                    <th class="p-2.5">Cantidad (Eje X)</th>
                                     <th class="p-2.5 text-center">Acción</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100">
-                                <!-- Filas iniciales basadas en tu ejercicio -->
                                 <tr>
                                     <td class="p-2"><input type="number" step="any" value="16.88" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
                                     <td class="p-2"><input type="number" step="any" value="0" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
@@ -89,18 +88,17 @@
         function inicializarGrafico() {
             const ctx = document.getElementById('graficoEconomia').getContext('2d');
             miGrafico = new Chart(ctx, {
-                type: 'line',
+                type: 'scatter', // Cambiado a scatter para respetar los puntos exactos X (Cantidad) e Y (Precio)
                 data: {
                     datasets: [{
                         label: 'Cantidad vs Precios',
                         data: [],
                         borderColor: 'rgb(37, 99, 235)',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.5)',
                         borderWidth: 2,
-                        pointRadius: 5,
-                        pointBackgroundColor: 'rgb(37, 99, 235)',
-                        fill: false,
-                        tension: 0 // Línea recta pura
+                        pointRadius: 6,
+                        showLine: true, // Dibuja la línea uniendo los puntos
+                        tension: 0
                     }]
                 },
                 options: {
@@ -110,10 +108,10 @@
                         x: {
                             type: 'linear',
                             position: 'bottom',
-                            title: { display: true, text: 'Cantidad' }
+                            title: { display: true, text: 'Cantidad (X)' }
                         },
                         y: {
-                            title: { display: true, text: 'Precios' }
+                            title: { display: true, text: 'Precios (Y)' }
                         }
                     }
                 }
@@ -144,13 +142,12 @@
             let datos = [];
             filas.forEach(fila => {
                 const inputs = fila.querySelectorAll('input');
-                const precio = parseFloat(inputs[0].value);
-                const cantidad = parseFloat(inputs[1].value);
+                const precio = parseFloat(inputs[0].value); // Y
+                const cantidad = parseFloat(inputs[1].value); // X
                 if (!isNaN(precio) && !isNaN(cantidad)) {
-                    datos.push({ x: cantidad, y: precio }); // X = Cantidad, Y = Precio para el gráfico de dispersión/línea
+                    datos.push({ x: cantidad, y: precio });
                 }
             });
-            // Ordenar por cantidad para que la línea se dibuje bien de izquierda a derecha
             datos.sort((a, b) => a.x - b.x);
             return datos;
         }
@@ -170,6 +167,9 @@
             let denominador = (n * sumaXX - sumaX * sumaX);
             if (denominador === 0) return null;
 
+            // Queremos calcular Cantidad en función del Precio o viceversa según el despeje.
+            // En tu ejemplo de clase: Cantidad = m * Precio + b (o Y = mx + b despejando Cantidad).
+            // Vamos a calcular la regresión clásica Y (Precio) en función de X (Cantidad): Precio = m*X + b
             let m = (n * sumaXY - sumaX * sumaY) / denominador;
             let b = (sumaY - m * sumaX) / n;
 
@@ -179,17 +179,16 @@
         function actualizarTodo() {
             const puntos = obtenerDatosTabla();
             
-            // Actualizar Gráfico
             miGrafico.data.datasets[0].data = puntos;
             miGrafico.update();
 
-            // Calcular y mostrar fórmula
             const cajaFormula = document.getElementById('cajaFormula');
             if (puntos.length >= 2) {
                 const resultado = calcularRegresionLineal(puntos);
                 if (resultado) {
                     let signo = resultado.b >= 0 ? '+' : '-';
                     let bValor = Math.abs(resultado.b).toFixed(2);
+                    // Mostramos la fórmula con la estructura Y = mx + b (Precio y Cantidad)
                     cajaFormula.innerHTML = `Precio = ${resultado.m.toFixed(2)}x ${signo} ${bValor}`;
                 } else {
                     cajaFormula.innerHTML = "No se pudo calcular la fórmula";

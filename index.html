@@ -8,9 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
 
@@ -109,18 +106,6 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyB4iToKovSDqstKb0b6GA1o2AYyMq796g",
-            authDomain: "appeconomia-9113d.firebaseapp.com",
-            projectId: "appeconomia-9113d",
-            storageBucket: "appeconomia-9113d.appspot.com",
-            messagingSenderId: "353466632624",
-            appId: "1:353466632624:web:7014ab13f0d198b44a6e75"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
         function validarCorreoInstitucional() {
             const correo = document.getElementById('inputCorreoInstitucional').value.trim().toLowerCase();
             const errorElemento = document.getElementById('mensajeError');
@@ -131,20 +116,10 @@
                 return;
             }
 
-            // Validar estrictamente el dominio institucional
+            // Validar estrictamente que termine en @neumann.global
             if (correo.endsWith("@neumann.global")) {
-                // Guardar en la base de datos de Firebase
-                db.collection("usuarios_app").add({
-                    email: correo,
-                    fecha: new Date().toLocaleString()
-                }).then(() => {
-                    localStorage.setItem("correo_usuario_economia", correo);
-                    permitirAcceso(correo);
-                }).catch((error) => {
-                    console.warn("Guardado local por red:", error);
-                    localStorage.setItem("correo_usuario_economia", correo);
-                    permitirAcceso(correo);
-                });
+                localStorage.setItem("correo_usuario_economia", correo);
+                permitirAcceso(correo);
             } else {
                 errorElemento.innerText = "Acceso denegado. Debe ser un correo @neumann.global";
                 errorElemento.classList.remove('hidden');

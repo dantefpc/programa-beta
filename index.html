@@ -95,7 +95,7 @@
                 type: 'scatter',
                 data: {
                     datasets: [{
-                        label: 'Cantidad vs Precios',
+                        label: 'Precios vs Cantidad',
                         data: [],
                         borderColor: 'rgb(37, 99, 235)',
                         backgroundColor: 'rgba(37, 99, 235, 0.5)',
@@ -112,10 +112,10 @@
                         x: {
                             type: 'linear',
                             position: 'bottom',
-                            title: { display: true, text: 'Precios (X)' }
+                            title: { display: true, text: 'Cantidad (X)' } // Eje X visual = Cantidad
                         },
                         y: {
-                            title: { display: true, text: 'Cantidad (Y)' }
+                            title: { display: true, text: 'Precios (Y)' } // Eje Y visual = Precios
                         }
                     }
                 }
@@ -146,26 +146,34 @@
             let datos = [];
             filas.forEach(fila => {
                 const inputs = fila.querySelectorAll('input');
-                const precio = parseFloat(inputs[0].value);    // X (Precios)
-                const cantidad = parseFloat(inputs[1].value);  // Y (Cantidad)
+                const precio = parseFloat(inputs[0].value);    // Precios
+                const cantidad = parseFloat(inputs[1].value);  // Cantidad
                 if (!isNaN(precio) && !isNaN(cantidad)) {
-                    datos.push({ x: precio, y: cantidad });
+                    // INVERSIÓN VISUAL: X visual = Cantidad, Y visual = Precios
+                    datos.push({ x: cantidad, y: precio });
                 }
             });
+            // Ordenar por Cantidad para que la línea se dibuje bien de izquierda a derecha en el eje X visual
             datos.sort((a, b) => a.x - b.x);
             return datos;
         }
 
-        function calcularRegresionLineal(puntos) {
-            let n = puntos.length;
+        function calcularRegresionLineal(filasDatos) {
+            // El cálculo matemático se mantiene intacto usando Precio como X y Cantidad como Y
+            let puntosMatematicos = [];
+            filasDatos.forEach(f => {
+                puntosMatematicos.push({ x: f.precio, y: f.cantidad });
+            });
+
+            let n = puntosMatematicos.length;
             if (n < 2) return null;
 
             let sumaX = 0, sumaY = 0, sumaXY = 0, sumaXX = 0;
             for (let i = 0; i < n; i++) {
-                sumaX += puntos[i].x;   
-                sumaY += puntos[i].y;   
-                sumaXY += (puntos[i].x * puntos[i].y);
-                sumaXX += (puntos[i].x * puntos[i].x);
+                sumaX += puntosMatematicos[i].x;   
+                sumaY += puntosMatematicos[i].y;   
+                sumaXY += (puntosMatematicos[i].x * puntosMatematicos[i].y);
+                sumaXX += (puntosMatematicos[i].x * puntosMatematicos[i].x);
             }
 
             let denominador = (n * sumaXX - sumaX * sumaX);
@@ -178,25 +186,40 @@
         }
 
         function formatearNumero(num) {
-            // Si es un número entero exacto, lo devuelve sin decimales, sino respeta hasta 3 decimales si es necesario
             let redondeado = Number(num.toFixed(3));
             return Number.isInteger(redondeado) ? redondeado : redondeado.toFixed(3);
         }
 
         function actualizarTodo() {
-            const puntos = obtenerDatosTabla();
-            
-            miGrafico.data.datasets[0].data = puntos;
+            const filas = document.querySelectorAll('#tablaDatos tbody tr');
+            let datosBrutos = [];
+            let puntosGrafico = [];
+
+            filas.forEach(fila => {
+                const inputs = fila.querySelectorAll('input');
+                const precio = parseFloat(inputs[0].value);    
+                const cantidad = parseFloat(inputs[1].value);  
+                if (!isNaN(precio) && !isNaN(cantidad)) {
+                    datosBrutos.push({ precio, cantidad });
+                    // Visualmente invertido para el gráfico
+                    puntosGrafico.push({ x: cantidad, y: precio });
+                }
+            });
+
+            puntosGrafico.sort((a, b) => a.x - b.x);
+
+            // Actualizar Gráfico con ejes visuales invertidos
+            miGrafico.data.datasets[0].data = puntosGrafico;
             miGrafico.update();
 
+            // Calcular Fórmula matemática intacta
             const cajaFormula = document.getElementById('cajaFormula');
-            if (puntos.length >= 2) {
-                const resultado = calcularRegresionLineal(puntos);
+            if (datosBrutos.length >= 2) {
+                const resultado = calcularRegresionLineal(datosBrutos);
                 if (resultado) {
                     let bFormateado = formatearNumero(resultado.b);
                     let mFormateado = formatearNumero(resultado.m);
                     
-                    // Orden solicitado: Cantidad = 135 - 8p
                     cajaFormula.innerHTML = `Cantidad = ${bFormateado} ${mFormateado}p`;
                 } else {
                     cajaFormula.innerHTML = "No se pudo calcular la fórmula";

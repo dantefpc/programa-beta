@@ -16,7 +16,7 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
 
     <!-- Modal de Acceso Restringido con Google -->
-    <div id="modalLogin" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div id="modalLogin" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
             <h3 class="text-2xl font-bold text-blue-600 mb-2">Acceso Restringido</h3>
             <p class="text-sm text-slate-500 mb-6">Esta aplicación es exclusiva para usuarios con correo institucional:</p>
@@ -129,49 +129,55 @@
 
         function iniciarSesionGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then((result) => {
-                const user = result.user;
-                const email = user.email;
+            // Usar redirect en lugar de popup para evitar bloqueos en celulares
+            auth.signInWithRedirect(provider);
+        }
 
-                // Validar que termine estrictamente en @neumann.global
-                if (email.endsWith("@neumann.global")) {
-                    // Guardar registro en Firestore de forma automática
-                    db.collection("usuarios_app").doc(user.uid).set({
-                        nombre: user.displayName,
-                        email: email,
-                        ultimoAcceso: new Date().toLocaleString()
-                    }, { merge: true });
+        // Al cargar la página, verificar si viene de la redirección de Google
+        auth.getRedirectResult().then((result) => {
+            if (result.user) {
+                validarYPermitir(result.user);
+            }
+        }).catch((error) => {
+            console.error("Error en redirección:", error);
+            mostrarError("No se pudo iniciar sesión. Verifica los dominios autorizados en Firebase.");
+        });
 
-                    permitirAcceso(user.displayName || email);
-                } else {
-                    // Si no es el dominio correcto, cerrar sesión y avisar
-                    auth.signOut();
-                    mostrarError("Acceso denegado. Solo se permite con correo institucional @neumann.global");
-                }
-            }).catch((error) => {
-                console.error("Error en autenticación:", error);
-                mostrarError("No se pudo iniciar sesión. Inténtalo de nuevo.");
-            });
+        function validarYPermitir(user) {
+            const email = user.email;
+            if (email && email.endsWith("@neumann.global")) {
+                db.collection("usuarios_app").doc(user.uid).set({
+                    nombre: user.displayName,
+                    email: email,
+                    ultimoAcceso: new Date().toLocaleString()
+                }, { merge: true });
+
+                permitirAcceso(user.displayName || email);
+            } else {
+                auth.signOut();
+                mostrarError("Acceso denegado. Solo se permite con correo institucional @neumann.global");
+                document.getElementById('modalLogin').classList.remove('hidden');
+            }
         }
 
         function permitirAcceso(nombre) {
             document.getElementById('spanNombreActivo').innerText = nombre;
-            document.getElementById('modalLogin').style.display = 'none';
+            document.getElementById('modalLogin').classList.add('hidden');
         }
 
         function mostrarError(texto) {
             const err = document.getElementById('mensajeError');
             err.innerText = texto;
             err.classList.remove('hidden');
+            document.getElementById('modalLogin').classList.remove('hidden');
         }
 
-        // Verificar si ya había una sesión abierta válida
+        // Verificar estado de sesión actual
         auth.onAuthStateChanged((user) => {
-            if (user && user.email && user.email.endsWith("@neumann.global")) {
-                permitirAcceso(user.displayName || user.email);
+            if (user) {
+                validarYPermitir(user);
             } else {
-                if(user) auth.signOut(); // Si hay alguien con otro correo, sacarlo
-                document.getElementById('modalLogin').style.display = 'flex';
+                document.getElementById('modalLogin').classList.remove('hidden');
             }
         });
 

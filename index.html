@@ -3,305 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Contable y de Gestión - Neumann</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Economía - Cuadro y Fórmula Automática</title>
+    <!-- Tailwind CSS para un diseño limpio y moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js CDN -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js para el gráfico automático -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="mainApp()">
+<body class="bg-slate-50 text-slate-800 min-p-6">
 
-    <!-- Header / Navbar -->
-    <header class="bg-indigo-700 text-white shadow-md">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold">Gestión y Contabilidad SaaS 🚀</h1>
-            <span class="text-xs bg-indigo-500 px-3 py-1 rounded-full">Estudiante Neumann</span>
-        </div>
-    </header>
+    <div class="max-w-4xl mx-auto p-4 md:p-6">
+        <header class="mb-6 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-blue-600">Economía: Cuadro y Fórmula Automática</h1>
+            <p class="text-sm text-slate-500 mt-1">Modifica los precios o cantidades y observa cómo la fórmula y el gráfico se actualizan solos.</p>
+        </header>
 
-    <!-- Main Container -->
-    <main class="container mx-auto px-4 py-6 max-w-5xl">
-
-        <!-- Navegación de Pestañas -->
-        <div class="flex border-b border-gray-300 mb-6 overflow-x-auto">
-            <button @click="tab = 'costos'" :class="tab === 'costos' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition whitespace-nowrap">
-                🍰 Costos y Recetas
-            </button>
-            <button @click="tab = 'caja'" :class="tab === 'caja' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition whitespace-nowrap">
-                💰 Cuadre de Caja
-            </button>
-            <button @click="tab = 'asientos'" :class="tab === 'asientos' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition whitespace-nowrap">
-                📚 Asientos PCGE
-            </button>
-            <button @click="tab = 'compras'" :class="tab === 'compras' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition whitespace-nowrap">
-                🧾 Registro de Compras
-            </button>
-        </div>
-
-        <!-- MÓDULO 1: COSTOS Y RECETAS -->
-        <div x-show="tab === 'costos'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Calculadora de Costos de Producción</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Nombre del Plato / Producto</label>
-                        <input type="text" x-model="newRecipe.name" placeholder="Ej. Torta de Chocolate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Sección de Tabla y Datos -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="font-semibold text-lg text-slate-700">Datos (Precios y Cantidad)</h2>
+                        <button onclick="agregarFila()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
+                            + Agregar Fila
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Costo Total de Ingredientes</label>
-                        <input type="number" x-model.number="newRecipe.cost" placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Margen de Ganancia Deseado (%)</label>
-                        <input type="number" x-model.number="newRecipe.margin" placeholder="50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <button @click="addRecipe" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition">Guardar Receta</button>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Tus Recetas Registradas</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Costo Base</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Sugerido</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <template x-for="recipe in recipes" :key="recipe.name">
-                                <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-800" x-text="recipe.name"></td>
-                                    <td class="px-4 py-2 text-sm text-gray-600" x-text="recipe.cost.toFixed(2)"></td>
-                                    <td class="px-4 py-2 text-sm font-bold text-green-600" x-text="(recipe.cost * (1 + recipe.margin / 100)).toFixed(2)"></td>
+                    
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-left border-collapse" id="tablaDatos">
+                            <thead>
+                                <tr class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200 sticky top-0">
+                                    <th class="p-2.5">Precio (Y / X)</th>
+                                    <th class="p-2.5">Cantidad (X / Y)</th>
+                                    <th class="p-2.5 text-center">Acción</th>
                                 </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- MÓDULO 2: CUADRE DE CAJA -->
-        <div x-show="tab === 'caja'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Cierre y Cuadre Diario de Caja</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Fondo Inicial en Caja</label>
-                        <input type="number" x-model.number="caja.opening" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ventas en Efectivo (Sistema)</label>
-                        <input type="number" x-model.number="caja.cashSales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ventas Yape / Plin / Digital</label>
-                        <input type="number" x-model.number="caja.digitalSales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Efectivo Real Contado en Caja</label>
-                        <input type="number" x-model.number="caja.realCash" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-md border border-gray-200 mt-4 space-y-2">
-                    <p class="text-sm text-gray-600">Efectivo Teórico Esperado: <span class="font-bold text-gray-800" x-text="(caja.opening + caja.cashSales).toFixed(2)"></span></p>
-                    <p class="text-sm text-gray-600">Diferencia (Sobrante / Faltante): 
-                        <span class="font-bold" :class="(caja.realCash - (caja.opening + caja.cashSales)) >= 0 ? 'text-green-600' : 'text-red-600'" 
-                              x-text="(caja.realCash - (caja.opening + caja.cashSales)).toFixed(2)">
-                        </span>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- MÓDULO 3: ASIENTOS CONTABLES PCGE -->
-        <div x-show="tab === 'asientos'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Generador de Asientos Contables</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Operación Comercial</label>
-                        <select x-model="selectedOperation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 bg-white">
-                            <option value="">-- Selecciona una operación --</option>
-                            <option value="venta_efectivo">Venta de mercadería al contado</option>
-                            <option value="compra_mercaderia">Compra de mercadería al crédito</option>
-                            <option value="pago_servicio">Pago de servicios básicos</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Monto Total</label>
-                        <input type="number" x-model.number="amount" placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <button @click="generateAsiento" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Generar Asiento</button>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-sm" x-show="currentAsiento.length > 0">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Libro Diario (Partida Doble)</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 border">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Cuenta</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Descripción</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase border-r">Debe</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Haber</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <template x-for="item in currentAsiento" :key="item.cuenta">
+                            </thead>
+                            <tbody class="text-sm divide-y divide-slate-100">
+                                <!-- Filas iniciales basadas en tu ejercicio -->
                                 <tr>
-                                    <td class="px-4 py-2 text-sm font-bold text-blue-600 border-r" x-text="item.cuenta"></td>
-                                    <td class="px-4 py-2 text-sm text-gray-800 border-r" x-text="item.nombre"></td>
-                                    <td class="px-4 py-2 text-sm text-right text-gray-700 border-r" x-text="item.tipo === 'debe' ? item.monto.toFixed(2) : '-'"></td>
-                                    <td class="px-4 py-2 text-sm text-right text-gray-700" x-text="item.tipo === 'haber' ? item.monto.toFixed(2) : '-'"></td>
+                                    <td class="p-2"><input type="number" step="any" value="16.88" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2"><input type="number" step="any" value="0" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2 text-center"><button onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1">✕</button></td>
                                 </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-sm rounded-md" x-text="explanation"></div>
-            </div>
-        </div>
-
-        <!-- MÓDULO 4: REGISTRO DE COMPRAS -->
-        <div x-show="tab === 'compras'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Registro de Factura de Compra</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Fecha</label>
-                        <input type="date" x-model="formCompra.fecha" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">RUC Proveedor</label>
-                        <input type="text" x-model="formCompra.ruc" placeholder="20XXXXXXXXX" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700">Razón Social</label>
-                        <input type="text" x-model="formCompra.proveedor" placeholder="Proveedor S.A.C." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">N° Factura</label>
-                        <input type="text" x-model="formCompra.factura" placeholder="F001-0001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Tipo Adquisición</label>
-                        <select x-model="formCompra.tipo" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 bg-white">
-                            <option value="mercaderia">Mercadería</option>
-                            <option value="gasto">Gasto Operativo</option>
-                            <option value="activo">Activo Fijo</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Monto Total (Inc. IGV)</label>
-                        <input type="number" x-model.number="formCompra.total" placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <button @click="agregarCompra" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition">Registrar Compra</button>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Libro Registro de Compras</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 border">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Fecha</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Factura</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Proveedor</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase border-r">Base Imponible</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase border-r">IGV (18%)</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total S/.</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <template x-for="(item, index) in compras" :key="index">
                                 <tr>
-                                    <td class="px-3 py-2 text-sm text-gray-700 border-r" x-text="item.fecha"></td>
-                                    <td class="px-3 py-2 text-sm text-gray-800 border-r" x-text="item.factura"></td>
-                                    <td class="px-3 py-2 text-sm text-gray-600 border-r" x-text="item.proveedor"></td>
-                                    <td class="px-3 py-2 text-sm text-right text-gray-700 border-r" x-text="item.base.toFixed(2)"></td>
-                                    <td class="px-3 py-2 text-sm text-right text-gray-700 border-r" x-text="item.igv.toFixed(2)"></td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold text-emerald-600" x-text="item.total.toFixed(2)"></td>
+                                    <td class="p-2"><input type="number" step="any" value="10.00" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2"><input type="number" step="any" value="55" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2 text-center"><button onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1">✕</button></td>
                                 </tr>
-                            </template>
-                        </tbody>
-                        <tfoot class="bg-gray-50 font-bold">
-                            <tr>
-                                <td colspan="3" class="px-3 py-2 text-right text-sm text-gray-700 border-r">TOTALES:</td>
-                                <td class="px-3 py-2 text-right text-sm text-emerald-700 border-r" x-text="totalBaseAcumulada.toFixed(2)"></td>
-                                <td class="px-3 py-2 text-right text-sm text-emerald-700 border-r" x-text="totalIgvAcumulado.toFixed(2)"></td>
-                                <td class="px-3 py-2 text-right text-sm text-emerald-700" x-text="totalGeneralAcumulado.toFixed(2)"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                <tr>
+                                    <td class="p-2"><input type="number" step="any" value="5.00" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2"><input type="number" step="any" value="95" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2 text-center"><button onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1">✕</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2"><input type="number" step="any" value="0.00" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2"><input type="number" step="any" value="135" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                                    <td class="p-2 text-center"><button onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1">✕</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cuadro de Fórmula -->
+                <div class="mt-4 bg-blue-50 border border-blue-100 p-3.5 rounded-xl">
+                    <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Fórmula Obtenida</span>
+                    <div id="cajaFormula" class="text-lg font-mono font-bold text-blue-900 mt-1">
+                        Calculando...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Gráfico -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-slate-100 flex flex-col justify-center items-center">
+                <h2 class="font-semibold text-lg text-slate-700 w-full mb-3 text-left">Gráfico Automático</h2>
+                <div class="w-full h-72 relative flex items-center justify-center">
+                    <canvas id="graficoEconomia"></canvas>
                 </div>
             </div>
         </div>
+    </div>
 
-    </main>
-
-    <!-- Script General de Lógica -->
     <script>
-        function mainApp() {
-            return {
-                tab: 'costos',
-                // Costos
-                newRecipe: { name: '', cost: '', margin: 40 },
-                recipes: [{ name: 'Café Americano', cost: 2.50, margin: 60 }],
-                // Caja
-                caja: { opening: 50.00, cashSales: 200.00, digitalSales: 150.00, realCash: 250.00 },
-                // Asientos
-                selectedOperation: '',
-                amount: '',
-                currentAsiento: [],
-                explanation: '',
-                // Compras
-                formCompra: { fecha: new Date().toISOString().split('T')[0], ruc: '', proveedor: '', factura: '', tipo: 'mercaderia', total: '' },
-                compras: [],
+        let miGrafico;
 
-                addRecipe() {
-                    if(this.newRecipe.name && this.newRecipe.cost) {
-                        this.recipes.push({ name: this.newRecipe.name, cost: parseFloat(this.newRecipe.cost), margin: parseFloat(this.newRecipe.margin) });
-                        this.newRecipe.name = ''; this.newRecipe.cost = '';
+        function inicializarGrafico() {
+            const ctx = document.getElementById('graficoEconomia').getContext('2d');
+            miGrafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Cantidad vs Precios',
+                        data: [],
+                        borderColor: 'rgb(37, 99, 235)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 5,
+                        pointBackgroundColor: 'rgb(37, 99, 235)',
+                        fill: false,
+                        tension: 0 // Línea recta pura
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: { display: true, text: 'Cantidad' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Precios' }
+                        }
                     }
-                },
-                generateAsiento() {
-                    if (!this.amount) return;
-                    let sub = this.amount / 1.18, igv = this.amount - sub;
-                    if(this.selectedOperation === 'venta_efectivo') {
-                        this.currentAsiento = [
-                            { cuenta: '101', nombre: 'Caja', tipo: 'debe', monto: this.amount },
-                            { cuenta: '4011', nombre: 'IGV', tipo: 'haber', monto: igv },
-                            { cuenta: '7011', nombre: 'Mercaderías', tipo: 'haber', monto: sub }
-                        ];
-                        this.explanation = 'Asiento de venta al contado.';
-                    } else {
-                        this.currentAsiento = [
-                            { cuenta: '601', nombre: 'Mercaderías', tipo: 'debe', monto: sub },
-                            { cuenta: '4011', nombre: 'IGV por acreditar', tipo: 'debe', monto: igv },
-                            { cuenta: '421', nombre: 'Cuentas por pagar comerciales', tipo: 'haber', monto: this.amount }
-                        ];
-                        this.explanation = 'Asiento de compra al crédito.';
-                    }
-                },
-                agregarCompra() {
-                    if (!this.formCompra.proveedor || !this.formCompra.total) return;
-                    let tot = parseFloat(this.formCompra.total), base = tot / 1.18, igv = tot - base;
-                    this.compras.push({ fecha: this.formCompra.fecha, ruc: this.formCompra.ruc, proveedor: this.formCompra.proveedor, factura: this.formCompra.factura, total: tot, base: base, igv: igv });
-                    this.formCompra.proveedor = ''; this.formCompra.factura = ''; this.formCompra.ruc = ''; this.formCompra.total = '';
-                },
-                get totalBaseAcumulada() { return this.compras.reduce((a, c) => a + c.base, 0); },
-                get totalIgvAcumulado() { return this.compras.reduce((a, c) => a + c.igv, 0); },
-                get totalGeneralAcumulado() { return this.compras.reduce((a, c) => a + c.total, 0); }
+                }
+            });
+            actualizarTodo();
+        }
+
+        function agregarFila() {
+            const tbody = document.querySelector('#tablaDatos tbody');
+            const nuevaFila = document.createElement('tr');
+            nuevaFila.innerHTML = `
+                <td class="p-2"><input type="number" step="any" value="0" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                <td class="p-2"><input type="number" step="any" value="0" class="w-full p-1 border rounded text-center input-val" oninput="actualizarTodo()"></td>
+                <td class="p-2 text-center"><button onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1">✕</button></td>
+            `;
+            tbody.appendChild(nuevaFila);
+            actualizarTodo();
+        }
+
+        function eliminarFila(btn) {
+            const fila = btn.closest('tr');
+            fila.remove();
+            actualizarTodo();
+        }
+
+        function obtenerDatosTabla() {
+            const filas = document.querySelectorAll('#tablaDatos tbody tr');
+            let datos = [];
+            filas.forEach(fila => {
+                const inputs = fila.querySelectorAll('input');
+                const precio = parseFloat(inputs[0].value);
+                const cantidad = parseFloat(inputs[1].value);
+                if (!isNaN(precio) && !isNaN(cantidad)) {
+                    datos.push({ x: cantidad, y: precio }); // X = Cantidad, Y = Precio para el gráfico de dispersión/línea
+                }
+            });
+            // Ordenar por cantidad para que la línea se dibuje bien de izquierda a derecha
+            datos.sort((a, b) => a.x - b.x);
+            return datos;
+        }
+
+        function calcularRegresionLineal(puntos) {
+            let n = puntos.length;
+            if (n < 2) return null;
+
+            let sumaX = 0, sumaY = 0, sumaXY = 0, sumaXX = 0;
+            for (let i = 0; i < n; i++) {
+                sumaX += puntos[i].x;
+                sumaY += puntos[i].y;
+                sumaXY += (puntos[i].x * puntos[i].y);
+                sumaXX += (puntos[i].x * puntos[i].x);
+            }
+
+            let denominador = (n * sumaXX - sumaX * sumaX);
+            if (denominador === 0) return null;
+
+            let m = (n * sumaXY - sumaX * sumaY) / denominador;
+            let b = (sumaY - m * sumaX) / n;
+
+            return { m, b };
+        }
+
+        function actualizarTodo() {
+            const puntos = obtenerDatosTabla();
+            
+            // Actualizar Gráfico
+            miGrafico.data.datasets[0].data = puntos;
+            miGrafico.update();
+
+            // Calcular y mostrar fórmula
+            const cajaFormula = document.getElementById('cajaFormula');
+            if (puntos.length >= 2) {
+                const resultado = calcularRegresionLineal(puntos);
+                if (resultado) {
+                    let signo = resultado.b >= 0 ? '+' : '-';
+                    let bValor = Math.abs(resultado.b).toFixed(2);
+                    cajaFormula.innerHTML = `Precio = ${resultado.m.toFixed(2)}x ${signo} ${bValor}`;
+                } else {
+                    cajaFormula.innerHTML = "No se pudo calcular la fórmula";
+                }
+            } else {
+                cajaFormula.innerHTML = "Ingrese al menos 2 puntos";
             }
         }
+
+        window.onload = inicializarGrafico;
     </script>
 </body>
 </html>

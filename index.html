@@ -9,12 +9,16 @@
     <!-- Chart.js para el gráfico automático -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-p-6">
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
 
-    <div class="max-w-4xl mx-auto p-4 md:p-6">
-        <header class="mb-6 text-center">
+    <div class="max-w-4xl mx-auto">
+        <!-- Encabezado con datos del autor -->
+        <header class="mb-6 text-center bg-white p-4 rounded-xl shadow-md border border-slate-100">
             <h1 class="text-2xl md:text-3xl font-bold text-blue-600">Economía: Cuadro y Fórmula Automática</h1>
             <p class="text-sm text-slate-500 mt-1">Modifica los precios o cantidades y observa cómo la fórmula y el gráfico se actualizan solos.</p>
+            <div class="mt-3 inline-block bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-1.5 rounded-full font-medium">
+                ✨ Creado por <strong>Dante</strong> | ¿Te sirvió? Apóyame con donaciones al Yape <strong>901102922</strong> para más tareas.
+            </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -32,8 +36,8 @@
                         <table class="w-full text-left border-collapse" id="tablaDatos">
                             <thead>
                                 <tr class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200 sticky top-0">
-                                    <th class="p-2.5">Precio (Eje Y)</th>
-                                    <th class="p-2.5">Cantidad (Eje X)</th>
+                                    <th class="p-2.5">Precios (X)</th>
+                                    <th class="p-2.5">Cantidad (Y)</th>
                                     <th class="p-2.5 text-center">Acción</th>
                                 </tr>
                             </thead>
@@ -88,7 +92,7 @@
         function inicializarGrafico() {
             const ctx = document.getElementById('graficoEconomia').getContext('2d');
             miGrafico = new Chart(ctx, {
-                type: 'scatter', // Cambiado a scatter para respetar los puntos exactos X (Cantidad) e Y (Precio)
+                type: 'scatter',
                 data: {
                     datasets: [{
                         label: 'Cantidad vs Precios',
@@ -97,7 +101,7 @@
                         backgroundColor: 'rgba(37, 99, 235, 0.5)',
                         borderWidth: 2,
                         pointRadius: 6,
-                        showLine: true, // Dibuja la línea uniendo los puntos
+                        showLine: true,
                         tension: 0
                     }]
                 },
@@ -108,10 +112,10 @@
                         x: {
                             type: 'linear',
                             position: 'bottom',
-                            title: { display: true, text: 'Cantidad (X)' }
+                            title: { display: true, text: 'Precios (X)' }
                         },
                         y: {
-                            title: { display: true, text: 'Precios (Y)' }
+                            title: { display: true, text: 'Cantidad (Y)' }
                         }
                     }
                 }
@@ -142,10 +146,10 @@
             let datos = [];
             filas.forEach(fila => {
                 const inputs = fila.querySelectorAll('input');
-                const precio = parseFloat(inputs[0].value); // Y
-                const cantidad = parseFloat(inputs[1].value); // X
+                const precio = parseFloat(inputs[0].value);    // X (Precios)
+                const cantidad = parseFloat(inputs[1].value);  // Y (Cantidad)
                 if (!isNaN(precio) && !isNaN(cantidad)) {
-                    datos.push({ x: cantidad, y: precio });
+                    datos.push({ x: precio, y: cantidad });
                 }
             });
             datos.sort((a, b) => a.x - b.x);
@@ -158,8 +162,8 @@
 
             let sumaX = 0, sumaY = 0, sumaXY = 0, sumaXX = 0;
             for (let i = 0; i < n; i++) {
-                sumaX += puntos[i].x;
-                sumaY += puntos[i].y;
+                sumaX += puntos[i].x;   // X = Precios
+                sumaY += puntos[i].y;   // Y = Cantidad
                 sumaXY += (puntos[i].x * puntos[i].y);
                 sumaXX += (puntos[i].x * puntos[i].x);
             }
@@ -167,9 +171,7 @@
             let denominador = (n * sumaXX - sumaX * sumaX);
             if (denominador === 0) return null;
 
-            // Queremos calcular Cantidad en función del Precio o viceversa según el despeje.
-            // En tu ejemplo de clase: Cantidad = m * Precio + b (o Y = mx + b despejando Cantidad).
-            // Vamos a calcular la regresión clásica Y (Precio) en función de X (Cantidad): Precio = m*X + b
+            // Regresion Y en función de X -> Cantidad = m * Precios + b
             let m = (n * sumaXY - sumaX * sumaY) / denominador;
             let b = (sumaY - m * sumaX) / n;
 
@@ -188,8 +190,8 @@
                 if (resultado) {
                     let signo = resultado.b >= 0 ? '+' : '-';
                     let bValor = Math.abs(resultado.b).toFixed(2);
-                    // Mostramos la fórmula con la estructura Y = mx + b (Precio y Cantidad)
-                    cajaFormula.innerHTML = `Precio = ${resultado.m.toFixed(2)}x ${signo} ${bValor}`;
+                    // Muestra la fórmula exacta: Cantidad = m(x) + b
+                    cajaFormula.innerHTML = `Cantidad = ${resultado.m.toFixed(2)}x ${signo} ${bValor}`;
                 } else {
                     cajaFormula.innerHTML = "No se pudo calcular la fórmula";
                 }

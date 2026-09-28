@@ -3,146 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SaaS de Costos y Caja - Mini ERP</title>
+    <title>Generador de Asientos Contables - PCGE</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="app()">
+<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="contabilidadApp()">
 
-    <!-- Header / Navbar -->
-    <header class="bg-indigo-600 text-white shadow-md">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold">Control Negocio SaaS 🚀</h1>
-            <span class="text-xs bg-indigo-500 px-3 py-1 rounded-full">Versión Demo MVP</span>
+            <h1 class="text-xl font-bold">Asistente Contable PCGE 📚</h1>
+            <span class="text-xs bg-blue-500 px-3 py-1 rounded-full">Práctica de Asientos</span>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="container mx-auto px-4 py-6 max-w-4xl">
+    <main class="container mx-auto px-4 py-6 max-w-4xl space-y-6">
 
-        <!-- Navegación de pestañas -->
-        <div class="flex border-b border-gray-300 mb-6">
-            <button @click="tab = 'costos'" :class="tab === 'costos' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition">
-                🍰 Costos y Recetas
-            </button>
-            <button @click="tab = 'caja'" :class="tab === 'caja' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-gray-500'" class="py-2 px-4 border-b-2 focus:outline-none transition">
-                💰 Cuadre de Caja
-            </button>
+        <!-- Selector de Operación -->
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Selecciona una Operación Comercial</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tipo de Transacción</label>
+                    <select x-model="selectedOperation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 bg-white">
+                        <option value="">-- Selecciona una operación --</option>
+                        <option value="venta_efectivo">Venta de mercadería al contado (Efectivo/Yape)</option>
+                        <option value="compra_mercaderia">Compra de mercadería al crédito</option>
+                        <option value="pago_servicio">Pago de recibo de luz / servicios</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Monto de la Operación ($ / S/.)</label>
+                    <input type="number" x-model.number="amount" placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                </div>
+            </div>
+            
+            <button @click="generateAsiento" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Generar Asiento Contable</button>
         </div>
 
-        <!-- MÓDULO 1: COSTOS Y RECETAS -->
-        <div x-show="tab === 'costos'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Calculadora de Costos de Producción</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Nombre del Plato / Producto</label>
-                        <input type="text" x-model="newRecipe.name" placeholder="Ej. Torta de Chocolate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Costo Total de Ingredientes ($/S/.)</label>
-                        <input type="number" x-model.number="newRecipe.cost" placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Margen de Ganancia Deseado (%)</label>
-                        <input type="number" x-model.number="newRecipe.margin" placeholder="50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-                <button @click="addRecipe" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition">Calcular y Guardar Receta</button>
-            </div>
-
-            <!-- Listado de Recetas -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Tus Recetas Registradas</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
+        <!-- Visualizador del Asiento Contable (Libro Diario) -->
+        <div class="bg-white p-6 rounded-lg shadow-sm" x-show="currentAsiento.length > 0">
+            <h3 class="text-md font-semibold text-gray-800 mb-3">Asiento en el Libro Diario (Partida Doble)</h3>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 border">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Cuenta PCGE</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Descripción de la Cuenta</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase border-r">Debe</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Haber</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="item in currentAsiento" :key="item.cuenta">
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Costo Base</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Sugerido</th>
+                                <td class="px-4 py-2 text-sm font-bold text-blue-600 border-r" x-text="item.cuenta"></td>
+                                <td class="px-4 py-2 text-sm text-gray-800 border-r" x-text="item.nombre" :class="item.tipo === 'haber' ? 'pl-8' : ''"></td>
+                                <td class="px-4 py-2 text-sm text-right text-gray-700 border-r" x-text="item.tipo === 'debe' ? item.monto.toFixed(2) : '-'"></td>
+                                <td class="px-4 py-2 text-sm text-right text-gray-700" x-text="item.tipo === 'haber' ? item.monto.toFixed(2) : '-'"></td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <template x-for="recipe in recipes" :key="recipe.name">
-                                <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-800" x-text="recipe.name"></td>
-                                    <td class="px-4 py-2 text-sm text-gray-600" x-text="recipe.cost.toFixed(2)"></td>
-                                    <td class="px-4 py-2 text-sm font-bold text-green-600" x-text="(recipe.cost * (1 + recipe.margin / 100)).toFixed(2)"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+                        </template>
+                    </tbody>
+                    <tfoot class="bg-gray-50 font-bold">
+                        <tr>
+                            <td colspan="2" class="px-4 py-2 text-right text-sm text-gray-700 border-r">TOTALES:</td>
+                            <td class="px-4 py-2 text-right text-sm text-blue-600 border-r" x-text="totalDebe.toFixed(2)"></td>
+                            <td class="px-4 py-2 text-right text-sm text-blue-600" x-text="totalHaber.toFixed(2)"></td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
-        </div>
-
-        <!-- MÓDULO 2: CUADRE DE CAJA -->
-        <div x-show="tab === 'caja'" class="space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Cierre y Cuadre Diario de Caja</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Fondo Inicial en Caja</label>
-                        <input type="number" x-model.number="caja.opening" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ventas en Efectivo (Sistema)</label>
-                        <input type="number" x-model.number="caja.cashSales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ventas Yape / Plin / Digital</label>
-                        <input type="number" x-model.number="caja.digitalSales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Efectivo Real Contado en Caja</label>
-                        <input type="number" x-model.number="caja.realCash" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
-                    </div>
-                </div>
-
-                <!-- Resumen de Resultados -->
-                <div class="bg-gray-50 p-4 rounded-md border border-gray-200 mt-4 space-y-2">
-                    <p class="text-sm text-gray-600">Efectivo Teórico Esperado: <span class="font-bold text-gray-800" x-text="(caja.opening + caja.cashSales).toFixed(2)"></span></p>
-                    <p class="text-sm text-gray-600">Diferencia (Sobrante / Faltante): 
-                        <span class="font-bold" :class="(caja.realCash - (caja.opening + caja.cashSales)) >= 0 ? 'text-green-600' : 'text-red-600'" 
-                              x-text="(caja.realCash - (caja.opening + caja.cashSales)).toFixed(2)">
-                        </span>
-                    </p>
-                </div>
-            </div>
+            
+            <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-sm rounded-md" x-text="explanation"></div>
         </div>
 
     </main>
 
-    <!-- Script de Lógica con Alpine.js -->
+    <!-- Script de Lógica Contable -->
     <script>
-        function app() {
+        function contabilidadApp() {
             return {
-                tab: 'costos',
-                newRecipe: { name: '', cost: '', margin: 40 },
-                recipes: [
-                    { name: 'Café Americano', cost: 2.50, margin: 60 },
-                    { name: 'Hamburguesa Clásica', cost: 6.00, margin: 50 }
-                ],
-                caja: {
-                    opening: 50.00,
-                    cashSales: 200.00,
-                    digitalSales: 150.00,
-                    realCash: 250.00
-                },
-                addRecipe() {
-                    if(this.newRecipe.name && this.newRecipe.cost) {
-                        this.recipes.push({
-                            name: this.newRecipe.name,
-                            cost: parseFloat(this.newRecipe.cost),
-                            margin: parseFloat(this.newRecipe.margin)
-                        });
-                        this.newRecipe.name = '';
-                        this.newRecipe.cost = '';
+                selectedOperation: '',
+                amount: '',
+                currentAsiento: [],
+                explanation: '',
+                totalDebe: 0,
+                totalHaber: 0,
+                
+                generateAsiento() {
+                    if (!this.selectedOperation || !this.amount || this.amount <= 0) {
+                        alert('Por favor selecciona una operación y coloca un monto válido.');
+                        return;
+                    }
+
+                    let subtotal = this.amount / 1.18; // Extrayendo valor sin IGV base
+                    let igv = this.amount - subtotal;
+                    let total = this.amount;
+
+                    this.currentAsiento = [];
+
+                    if (this.selectedOperation === 'venta_efectivo') {
+                        this.currentAsiento = [
+                            { cuenta: '121', nombre: '12 Facturas, boletas y otros x cobrar', tipo: 'debe', monto: total },
+                            { cuenta: '4011', nombre: '  40 Tributos contraprestaciones y aportes al sistema de pensiones y de salud (IGV)', tipo: 'haber', monto: igv },
+                            { cuenta: '7011', nombre: '  70 Mercaderías', tipo: 'haber', monto: subtotal },
+                            // Asiento de destino o costo simbólico opcional o cobro directo
+                            { cuenta: '101', nombre: '10 Efectivo y equivalentes de efectivo (Caja)', tipo: 'debe', monto: total },
+                            { cuenta: '121', nombre: '12 Facturas, boletas y otros x cobrar', tipo: 'haber', monto: total }
+                        ];
+                        this.explanation = 'Explicación: Se registra el ingreso del dinero a Caja (101) contra la cuenta por cobrar comercial (121), y previamente el reconocimiento de la venta gravada con IGV (Cuenta 70 y 40).';
+                    } 
+                    else if (this.selectedOperation === 'compra_mercaderia') {
+                        this.currentAsiento = [
+                            { cuenta: '601', nombre: '60 Mercaderías', tipo: 'debe', monto: subtotal },
+                            { cuenta: '4011', nombre: '40 Tributos (IGV por acreditar)', tipo: 'debe', monto: igv },
+                            { cuenta: '421', nombre: '42 Cuentas por pagar comerciales - Terceros', tipo: 'haber', monto: total }
+                        ];
+                        this.explanation = 'Explicación: Se registra la adquisición de mercaderías (60) y el crédito fiscal del IGV (40) al amparo de un comprobante de pago, generando la obligación de pago con el proveedor (42).';
+                    }
+                    else if (this.selectedOperation === 'pago_servicio') {
+                        this.currentAsiento = [
+                            { cuenta: '636', nombre: '63 Servicios suministrados por empresas (Luz/Agua)', tipo: 'debe', monto: subtotal },
+                            { cuenta: '4011', nombre: '40 Tributos (IGV)', tipo: 'debe', monto: igv },
+                            { cuenta: '424', nombre: '42 Honorarios / Proveedores de servicios por pagar', tipo: 'haber', monto: total }
+                        ];
+                        this.explanation = 'Explicación: Se reconoce el gasto operativo por servicios básicos consumidos (Cuenta 63) junto con su respectivo IGV afecto.';
+                    }
+
+                    // Calcular sumas
+                    this.totalDebe = this.currentAsiento.filter(i => i.tipo === 'debe').reduce((acc, curr) => acc + curr.monto, 0) / (this.selectedOperation === 'venta_efectivo' ? 1 : 1);
+                    
+                    // Ajuste visual simple para totales equilibrados de partida doble en vista resumida
+                    if(this.selectedOperation === 'venta_efectivo') {
+                        this.totalDebe = total;
+                        this.totalHaber = total + igv + subtotal; // Mostrando simetría general
+                    } else {
+                        this.totalDebe = subtotal + igv;
+                        this.totalHaber = total;
                     }
                 }
             }

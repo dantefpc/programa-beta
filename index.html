@@ -4,18 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Economía - Cuadro y Fórmula Automática</title>
-    <!-- Tailwind CSS para un diseño limpio y moderno -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para el gráfico automático -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
+
+    <!-- Modal para pedir el nombre al entrar -->
+    <div id="modalNombre" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full text-center">
+            <h3 class="text-xl font-bold text-blue-600 mb-2">¡Bienvenido a la App!</h3>
+            <p class="text-sm text-slate-500 mb-4">Por favor, ingresa tu nombre para continuar y registrar tu visita:</p>
+            <input type="text" id="inputNombreUsuario" placeholder="Tu nombre y apellido" class="w-full p-3 border border-slate-300 rounded-xl mb-4 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="guardarNombreUsuario()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
+                Entrar a la App
+            </button>
+        </div>
+    </div>
 
     <div class="max-w-4xl mx-auto">
         <!-- Encabezado con datos del autor -->
         <header class="mb-6 text-center bg-white p-4 rounded-xl shadow-md border border-slate-100">
             <h1 class="text-2xl md:text-3xl font-bold text-blue-600">Economía: Cuadro y Fórmula Automática</h1>
             <p class="text-sm text-slate-500 mt-1">Modifica los precios o cantidades y observa cómo la fórmula y el gráfico se actualizan solos.</p>
+            <div class="mt-2 text-xs text-slate-400">Usuario activo: <span id="spanNombreActivo" class="font-bold text-slate-700">-</span></div>
             <div class="mt-3 inline-block bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-1.5 rounded-full font-medium">
                 ✨ Creado por <strong>Dante</strong> | ¿Te sirvió? Apóyame con donaciones al Yape <strong>901102922</strong> para más tareas.
             </div>
@@ -87,6 +103,52 @@
     </div>
 
     <script>
+        // CONFIGURA AQUÍ TUS CREDENCIALES DE FIREBASE
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function guardarNombreUsuario() {
+            const nombreInput = document.getElementById('inputNombreUsuario').value.trim();
+            if(!nombreInput) {
+                alert("Por favor ingresa tu nombre.");
+                return;
+            }
+
+            // Guardar en Firestore en una colección llamada "usuarios_app"
+            db.collection("usuarios_app").add({
+                nombre: nombreInput,
+                fecha: new Date().toLocaleString()
+            }).then(() => {
+                localStorage.setItem("nombre_usuario_economia", nombreInput);
+                document.getElementById('spanNombreActivo').innerText = nombreInput;
+                document.getElementById('modalNombre').style.display = 'none';
+            }).catch((error) => {
+                console.error("Error al guardar: ", error);
+                // Si ocurre un error con firebase, igual lo deja pasar localmente
+                localStorage.setItem("nombre_usuario_economia", nombreInput);
+                document.getElementById('spanNombreActivo').innerText = nombreInput;
+                document.getElementById('modalNombre').style.display = 'none';
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const guardado = localStorage.getItem("nombre_usuario_economia");
+            if(guardado) {
+                document.getElementById('spanNombreActivo').innerText = guardado;
+                document.getElementById('modalNombre').style.display = 'none';
+            }
+        });
+
         let miGrafico;
 
         function inicializarGrafico() {
@@ -112,10 +174,10 @@
                         x: {
                             type: 'linear',
                             position: 'bottom',
-                            title: { display: true, text: 'Cantidad (X)' } // Eje X visual = Cantidad
+                            title: { display: true, text: 'Cantidad (X)' }
                         },
                         y: {
-                            title: { display: true, text: 'Precios (Y)' } // Eje Y visual = Precios
+                            title: { display: true, text: 'Precios (Y)' }
                         }
                     }
                 }
@@ -141,25 +203,7 @@
             actualizarTodo();
         }
 
-        function obtenerDatosTabla() {
-            const filas = document.querySelectorAll('#tablaDatos tbody tr');
-            let datos = [];
-            filas.forEach(fila => {
-                const inputs = fila.querySelectorAll('input');
-                const precio = parseFloat(inputs[0].value);    // Precios
-                const cantidad = parseFloat(inputs[1].value);  // Cantidad
-                if (!isNaN(precio) && !isNaN(cantidad)) {
-                    // INVERSIÓN VISUAL: X visual = Cantidad, Y visual = Precios
-                    datos.push({ x: cantidad, y: precio });
-                }
-            });
-            // Ordenar por Cantidad para que la línea se dibuje bien de izquierda a derecha en el eje X visual
-            datos.sort((a, b) => a.x - b.x);
-            return datos;
-        }
-
         function calcularRegresionLineal(filasDatos) {
-            // El cálculo matemático se mantiene intacto usando Precio como X y Cantidad como Y
             let puntosMatematicos = [];
             filasDatos.forEach(f => {
                 puntosMatematicos.push({ x: f.precio, y: f.cantidad });
@@ -201,18 +245,15 @@
                 const cantidad = parseFloat(inputs[1].value);  
                 if (!isNaN(precio) && !isNaN(cantidad)) {
                     datosBrutos.push({ precio, cantidad });
-                    // Visualmente invertido para el gráfico
                     puntosGrafico.push({ x: cantidad, y: precio });
                 }
             });
 
             puntosGrafico.sort((a, b) => a.x - b.x);
 
-            // Actualizar Gráfico con ejes visuales invertidos
             miGrafico.data.datasets[0].data = puntosGrafico;
             miGrafico.update();
 
-            // Calcular Fórmula matemática intacta
             const cajaFormula = document.getElementById('cajaFormula');
             if (datosBrutos.length >= 2) {
                 const resultado = calcularRegresionLineal(datosBrutos);

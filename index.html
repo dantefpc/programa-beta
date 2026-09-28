@@ -8,21 +8,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK Compat (Versión clásica para HTML directo) -->
+    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
 
-    <!-- Modal para pedir el nombre al entrar -->
-    <div id="modalNombre" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full text-center">
-            <h3 class="text-xl font-bold text-blue-600 mb-2">¡Bienvenido a la App!</h3>
-            <p class="text-sm text-slate-500 mb-4">Por favor, ingresa tu nombre para continuar y registrar tu visita:</p>
-            <input type="text" id="inputNombreUsuario" placeholder="Tu nombre y apellido" class="w-full p-3 border border-slate-300 rounded-xl mb-4 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="guardarNombreUsuario()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
-                Entrar a la App
+    <!-- Modal de Acceso Restringido con Google -->
+    <div id="modalLogin" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+            <h3 class="text-2xl font-bold text-blue-600 mb-2">Acceso Restringido</h3>
+            <p class="text-sm text-slate-500 mb-6">Esta aplicación es exclusiva para usuarios con correo institucional:</p>
+            <div class="bg-blue-50 text-blue-700 font-mono text-sm py-2 px-4 rounded-lg mb-6 border border-blue-100 font-semibold">
+                @neumann.global
+            </div>
+            
+            <button onclick="iniciarSesionGoogle()" class="w-full bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.17 21.31 7.23 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.19C.43 8.13 0 9.87 0 11.7c0 1.83.43 3.57 1.19 5.1l4.08-2.56z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.69 1.19 6.6l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+                </svg>
+                Iniciar sesión con Google
             </button>
+            <p id="mensajeError" class="text-xs text-red-500 mt-4 font-medium hidden"></p>
         </div>
     </div>
 
@@ -31,7 +42,7 @@
         <header class="mb-6 text-center bg-white p-4 rounded-xl shadow-md border border-slate-100">
             <h1 class="text-2xl md:text-3xl font-bold text-blue-600">Economía: Cuadro y Fórmula Automática</h1>
             <p class="text-sm text-slate-500 mt-1">Modifica los precios o cantidades y observa cómo la fórmula y el gráfico se actualizan solos.</p>
-            <div class="mt-2 text-xs text-slate-400">Usuario activo: <span id="spanNombreActivo" class="font-bold text-slate-700">-</span></div>
+            <div class="mt-2 text-xs text-slate-400">Usuario institucional: <span id="spanNombreActivo" class="font-bold text-slate-700">-</span></div>
             <div class="mt-3 inline-block bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-1.5 rounded-full font-medium">
                 ✨ Creado por <strong>Dante</strong> | ¿Te sirvió? Apóyame con donaciones al Yape <strong>901102922</strong> para más tareas.
             </div>
@@ -103,7 +114,6 @@
     </div>
 
     <script>
-        // Credenciales configuradas con tus datos de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB4iToKovSDqstKb0b6GA1o2AYyMq796g",
             authDomain: "appeconomia-9113d.firebaseapp.com",
@@ -113,38 +123,55 @@
             appId: "1:353466632624:web:7014ab13f0d198b44a6e75"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.firestore();
 
-        function guardarNombreUsuario() {
-            const nombreInput = document.getElementById('inputNombreUsuario').value.trim();
-            if(!nombreInput) {
-                alert("Por favor ingresa tu nombre.");
-                return;
-            }
+        function iniciarSesionGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                const user = result.user;
+                const email = user.email;
 
-            // Guardar en Firestore en la colección "usuarios_app"
-            db.collection("usuarios_app").add({
-                nombre: nombreInput,
-                fecha: new Date().toLocaleString()
-            }).then(() => {
-                localStorage.setItem("nombre_usuario_economia", nombreInput);
-                document.getElementById('spanNombreActivo').innerText = nombreInput;
-                document.getElementById('modalNombre').style.display = 'none';
+                // Validar que termine estrictamente en @neumann.global
+                if (email.endsWith("@neumann.global")) {
+                    // Guardar registro en Firestore de forma automática
+                    db.collection("usuarios_app").doc(user.uid).set({
+                        nombre: user.displayName,
+                        email: email,
+                        ultimoAcceso: new Date().toLocaleString()
+                    }, { merge: true });
+
+                    permitirAcceso(user.displayName || email);
+                } else {
+                    // Si no es el dominio correcto, cerrar sesión y avisar
+                    auth.signOut();
+                    mostrarError("Acceso denegado. Solo se permite con correo institucional @neumann.global");
+                }
             }).catch((error) => {
-                console.error("Error al guardar: ", error);
-                localStorage.setItem("nombre_usuario_economia", nombreInput);
-                document.getElementById('spanNombreActivo').innerText = nombreInput;
-                document.getElementById('modalNombre').style.display = 'none';
+                console.error("Error en autenticación:", error);
+                mostrarError("No se pudo iniciar sesión. Inténtalo de nuevo.");
             });
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const guardado = localStorage.getItem("nombre_usuario_economia");
-            if(guardado) {
-                document.getElementById('spanNombreActivo').innerText = guardado;
-                document.getElementById('modalNombre').style.display = 'none';
+        function permitirAcceso(nombre) {
+            document.getElementById('spanNombreActivo').innerText = nombre;
+            document.getElementById('modalLogin').style.display = 'none';
+        }
+
+        function mostrarError(texto) {
+            const err = document.getElementById('mensajeError');
+            err.innerText = texto;
+            err.classList.remove('hidden');
+        }
+
+        // Verificar si ya había una sesión abierta válida
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email && user.email.endsWith("@neumann.global")) {
+                permitirAcceso(user.displayName || user.email);
+            } else {
+                if(user) auth.signOut(); // Si hay alguien con otro correo, sacarlo
+                document.getElementById('modalLogin').style.display = 'flex';
             }
         });
 
